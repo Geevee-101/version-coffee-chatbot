@@ -39,7 +39,7 @@ class DetailsAgent:
         )
 
         system_prompt = f"""
-        You are an assistant for Merry's Way coffee shop.
+        You are an assistant for Version Coffee coffee shop.
         Answer based on this context:
         
         Context: {source_knowledge}

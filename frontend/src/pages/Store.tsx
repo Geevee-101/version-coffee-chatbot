@@ -25,6 +25,13 @@ export function Store() {
     queryFn: fetchProducts,
   });
 
+  const categoryOrder = ["Coffee", "Drinking Chocolate", "Flavours", "Bakery", "Packaged Chocolate"];
+  const sortedProducts = [...products].sort(
+    (a, b) =>
+      (categoryOrder.indexOf(a.category) === -1 ? categoryOrder.length : categoryOrder.indexOf(a.category)) -
+      (categoryOrder.indexOf(b.category) === -1 ? categoryOrder.length : categoryOrder.indexOf(b.category))
+  );
+
   const getQuantity = (id: string) => quantities[id] || 0;
 
   const updateQuantity = (id: string, delta: number) => {
@@ -45,7 +52,7 @@ export function Store() {
     return sum + (product?.price || 0) * qty;
   }, 0);
 
-  const handlePurchase = () => {
+  const handleCheckOut = () => {
     if (totalItems === 0) {
       toast.error("Please add at least one item to your order.");
       return;
@@ -88,10 +95,19 @@ export function Store() {
           Order via Chatbot
         </Button>
 
+        {/* CHATBOX */}
+        {isChatOpen && (
+          <ChatBox
+            onClose={() => setIsChatOpen(false)}
+            products={products}
+            setQuantities={setQuantities}
+          />
+        )}
+
         <div className="mx-auto">
           <h2 className="text-xl font-semibold mb-1">Our Menu</h2>
           <p className="text-muted-foreground mb-6">
-            Select your favorites below, or use the chatbot to place your order.
+            Select your favorites below, or ask the chatbot for more details and to place your order.
           </p>
 
           {isLoading && (
@@ -109,29 +125,28 @@ export function Store() {
 
           {!isLoading && !error && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {products.map((product) => {
+              {sortedProducts.map((product) => {
                 const qty = getQuantity(product._id);
                 return (
                   <Card
                     key={product._id}
                     className={`transition-all ${qty > 0 ? "ring-2 ring-primary" : ""}`}
                   >
-                    <CardContent className="flex flex-col gap-3 p-5">
-                      <img
-                        src={product.image_path}
-                        alt={product.name}
-                        className="w-full h-40 object-cover rounded-md"
-                      />
+                    <CardContent className="flex flex-col gap-3">
+                      <div className="relative">
+                        <img
+                          src={product.image_path}
+                          alt={product.name}
+                          className="w-full h-40 object-cover rounded-md"
+                        />
+                        <span className="absolute bottom-2 left-2 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                          {product.category}
+                        </span>
+                      </div>
                       <div>
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center">
                           <h3 className="font-semibold text-lg">{product.name}</h3>
-                          <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                            {product.category}
-                          </span>
                         </div>
-                        <p className="text-sm text-muted-foreground leading-snug mt-1 line-clamp-2">
-                          {product.description}
-                        </p>
                       </div>
                       <div className="flex items-center justify-between mt-auto">
                         <span className="font-bold text-primary text-lg">
@@ -167,7 +182,7 @@ export function Store() {
         </div>
       </div>
 
-      {/* PURCHASE BAR */}
+      {/* CHECK OUT BAR */}
       <div className="bg-muted p-4 md:px-8 z-40">
         <div className="mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -181,19 +196,18 @@ export function Store() {
             <span className="font-bold text-lg">${totalPrice.toFixed(2)}</span>
           </div>
           <Button
-            onClick={handlePurchase}
+            onClick={handleCheckOut}
             disabled={totalItems === 0}
             className="px-8"
           >
-            Purchase
+            Check Out
           </Button>
         </div>
       </div>
 
 
 
-      {/* CHATBOX */}
-      {isChatOpen && <ChatBox onClose={() => setIsChatOpen(false)} />}
+
     </div>
   );
 }

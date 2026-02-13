@@ -24,6 +24,7 @@ agent_controller = AgentController()
 class Message(BaseModel):
     role: str
     content: str
+    memory: dict | None = None
 
 
 class ChatRequest(BaseModel):

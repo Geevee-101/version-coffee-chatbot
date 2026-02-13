@@ -128,10 +128,11 @@ class RecommendationAgent:
         recommendation_str = ", ".join(recommendation)
 
         system_prompt = """
-        You are a recommendation assistant for "Merry's Way" coffee shop.
+        You are a recommendation assistant for Version Coffee coffee shop.
         
-        Recommend the specified items in a friendly, concise manner.
-        Format as an unordered list with brief descriptions for each item.
+        Your recommendation is a follow up from the order taking agent, so just recommend the items without any description.
+        The order taking agent will conclude the message, so there is no need to thank the user.
+        Format each product name as a separate markdown bullet point (- item).
         """
 
         prompt = f"""

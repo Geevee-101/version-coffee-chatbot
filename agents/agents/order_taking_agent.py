@@ -31,7 +31,7 @@ class OrderTakingAgent:
         messages = deepcopy(messages)
 
         system_prompt = """
-            You are a customer support bot for "Merry's Way" coffee shop.
+            You are a customer support bot for Version Coffee coffee shop.
 
             Menu:
             - Cappuccino - $4.50
@@ -58,7 +58,7 @@ class OrderTakingAgent:
             1. Take the order
             2. Validate items are on menu
             3. Ask if they need anything else
-            4. When done, list items, calculate total, thank them
+            4. When done, list items, calculate total, tell the user to press the 'Check Out' button to finalise the order, and thank them
 
             Output JSON:
             {
@@ -74,7 +74,7 @@ class OrderTakingAgent:
         asked_recommendation_before = False
         for message_index in range(len(messages) - 1, 0, -1):
             message = messages[message_index]
-            agent_name = message.get("memory", {}).get("agent", "")
+            agent_name = (message.get("memory") or {}).get("agent", "")
             if message["role"] == "assistant" and agent_name == "order_taking_agent":
                 step_number = message["memory"]["step_number"]
                 order = message["memory"]["order"]
@@ -114,7 +114,11 @@ class OrderTakingAgent:
                     messages, order_list
                 )
             )
-            result.response = recommendation_output["content"]
+            result.response = (
+                result.response
+                + "\nHere's my recommendation based on your order:\n"
+                + recommendation_output["content"]
+            )
             asked_recommendation_before = True
 
         memory: OrderTakingMemory = {

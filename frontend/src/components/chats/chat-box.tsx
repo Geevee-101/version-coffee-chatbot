@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import ChatItem from "./chat-item";
 import { sendChatRequest } from "@/api/chat";
 import type { ChatMessage } from "@/api/chat";
+import type { Product } from "@/api/products";
 import { ArrowUpRight, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,12 +12,14 @@ import { toast } from "sonner";
 
 interface ChatBoxProps {
   onClose: () => void;
+  products: Product[];
+  setQuantities: React.Dispatch<React.SetStateAction<Record<string, number>>>;
 }
 
-export function ChatBox({ onClose }: ChatBoxProps) {
+export function ChatBox({ onClose, products, setQuantities }: ChatBoxProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([{ role: "assistant", content: "Welcome to Version Coffee! I’m here to help with anything you’d like to know about our store or menu. What can I get started for you today?" }]);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async () => {
@@ -33,6 +36,21 @@ export function ChatBox({ onClose }: ChatBoxProps) {
     try {
       const response = await sendChatRequest(updatedMessages);
       setMessages((prev) => [...prev, response]);
+
+      // Sync chatbot order to store quantities
+      if (response.memory?.agent === "order_taking_agent" && response.memory?.order) {
+        const order = response.memory.order as { item: string; quantity: number }[];
+        const newQuantities: Record<string, number> = {};
+        for (const orderItem of order) {
+          const product = products.find(
+            (p) => p.name.toLowerCase() === orderItem.item.toLowerCase()
+          );
+          if (product) {
+            newQuantities[product._id] = orderItem.quantity;
+          }
+        }
+        setQuantities(newQuantities);
+      }
     } catch {
       toast.error("Failed to send message.");
       // Remove the user message on failure
@@ -54,10 +72,10 @@ export function ChatBox({ onClose }: ChatBoxProps) {
   }, [messages.length, isLoading]);
 
   return (
-    <div className="fixed bottom-20 right-4 md:right-8 w-[calc(100%-2rem)] md:w-[28rem] h-[32rem] bg-background border border-border rounded-2xl shadow-xl flex flex-col z-50 overflow-hidden">
+    <div className="fixed bottom-25 right-4 md:right-8 w-[calc(100%-2rem)] md:w-[28rem] h-[32rem] bg-background border border-primary rounded-2xl shadow-xl flex flex-col z-50 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border bg-muted">
-        <h2 className="text-lg font-bold text-primary">Chat with us</h2>
+      <div className="flex items-center justify-between p-4 bg-muted">
+        <h2 className="text-lg font-bold text-primary">Chatbot</h2>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-5 w-5" />
         </Button>
@@ -97,8 +115,8 @@ export function ChatBox({ onClose }: ChatBoxProps) {
       </div>
 
       {/* Input */}
-      <div className="p-3 border-t border-border">
-        <Card className="shadow-none border-0 p-0">
+      <div className="p-3 bg-muted">
+        <Card className="shadow-none border-0 p-0 bg-transparent">
           <CardContent className="flex gap-2 p-0">
             <form
               onSubmit={(e) => {
