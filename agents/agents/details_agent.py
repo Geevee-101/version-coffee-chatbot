@@ -1,7 +1,7 @@
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 import os
 from copy import deepcopy
-from pinecone import Pinecone
+from pymongo import MongoClient
 import dotenv
 from typing import List, Dict, Any
 from .types import AgentMessage, DetailsMemory
@@ -13,30 +13,54 @@ class DetailsAgent:
     def __init__(self):
         self.llm = ChatOpenAI(model=os.getenv("MODEL_NAME", "gpt-4o-mini"))
         self.embeddings = OpenAIEmbeddings(model=os.getenv("EMBEDDING_MODEL"))
-        self.pinecone = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
-        self.index_name = os.getenv("PINECONE_INDEX_NAME")
-        self.namespace = os.getenv("PINECONE_NAMESPACE", "ns1")
+        self.client = MongoClient(os.getenv("MONGODB_URI"))
+        self.db = self.client["test"]
 
-    def get_closest_results(self, index_name, input_embeddings, k: int = 5):
-        index = self.pinecone.Index(index_name)
-        results = index.query(
-            namespace=self.namespace,
-            vector=input_embeddings,
-            top_k=k,
-            include_values=False,
-            include_metadata=True,
-        )
-        return results
+    def vector_search(self, collection_name, index_name, query_vector, k=5):
+        collection = self.db[collection_name]
+        pipeline = [
+            {
+                "$vectorSearch": {
+                    "index": index_name,
+                    "path": "embedding",
+                    "queryVector": query_vector,
+                    "numCandidates": k * 10,
+                    "limit": k,
+                }
+            },
+            {
+                "$project": {
+                    "_id": 0,
+                    "embedding": 0,
+                    "score": {"$meta": "vectorSearchScore"},
+                }
+            },
+        ]
+        return list(collection.aggregate(pipeline))
 
     def get_response(self, messages: List[Dict[str, Any]]) -> AgentMessage:
         messages = deepcopy(messages)
 
         user_message = messages[-1]["content"]
-        embeddings = self.embeddings.embed_query(user_message)
-        result = self.get_closest_results(self.index_name, embeddings)
-        source_knowledge = "\n".join(
-            [item["metadata"]["text"] for item in result["matches"]]
+        query_vector = self.embeddings.embed_query(user_message)
+
+        # Search both collections
+        product_results = self.vector_search(
+            "products", "ProductsIndex", query_vector, k=5
         )
+        about_results = self.vector_search("about", "AboutIndex", query_vector, k=1)
+
+        # Build context from product results
+        product_texts = []
+        for doc in product_results:
+            product_texts.append(doc.get("text_for_embedding", ""))
+
+        # Build context from about results
+        about_texts = []
+        for doc in about_results:
+            about_texts.append(doc.get("content", ""))
+
+        source_knowledge = "\n".join(product_texts + about_texts)
 
         system_prompt = f"""
         You are an assistant for Version Coffee coffee shop.

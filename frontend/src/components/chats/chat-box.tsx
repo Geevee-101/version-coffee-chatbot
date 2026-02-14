@@ -72,7 +72,7 @@ export function ChatBox({ onClose, products, setQuantities }: ChatBoxProps) {
   }, [messages.length, isLoading]);
 
   return (
-    <div className="fixed bottom-25 right-4 md:right-8 w-[calc(100%-2rem)] md:w-[28rem] h-[32rem] bg-background border border-primary rounded-2xl shadow-xl flex flex-col z-50 overflow-hidden">
+    <div className="fixed bottom-25 right-4 md:right-8 w-[calc(100%-2rem)] md:w-[35rem] h-[32rem] bg-background border border-primary rounded-2xl shadow-xl flex flex-col z-50 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between p-4 bg-muted">
         <h2 className="text-lg font-bold text-primary">Chatbot</h2>

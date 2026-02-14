@@ -13,7 +13,7 @@ services:
         value: production
       - key: PORT
         value: 3000
-      - key: MONGODB_URL
+      - key: MONGODB_URI
         sync: false
       - key: JWT_SECRET
         generateValue: true
@@ -40,7 +40,7 @@ services:
         value: 8000
       - key: OPENAI_API_KEY
         sync: false
-      - key: PINECONE_API_KEY
+      - key: MONGODB_URI
         sync: false
       - key: API_URL
         sync: false

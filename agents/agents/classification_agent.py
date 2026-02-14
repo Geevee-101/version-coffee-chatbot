@@ -24,7 +24,7 @@ class ClassificationAgent:
         system_prompt = """
             You are a router for a coffee shop chatbot. Choose the right agent:
       
-            1. details_agent: Questions about the shop (location, hours, menu info)
+            1. details_agent: Questions about Version Coffee (general info, location, hours, delivery, menu details, about us)
             2. order_taking_agent: Taking and managing orders
             3. recommendation_agent: Product recommendations
 
